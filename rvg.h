@@ -4,13 +4,17 @@
 typedef int func(HWND, HWND);
 
 namespace RvG {
-	
+
 	class ParentWidget {
 	public:
 		HWND hWnd = 0;
 		ParentWidget* children[256] = { };
 		ParentWidget* parent = nullptr;
 		func* bind = nullptr;
+		int xPos;
+		int yPos;
+		int widLen;
+		int heiLen;
 		int setTitleText(const wchar_t* titleText);
 		int setGeometry(int x, int y, int wid, int hei);
 		int show();
@@ -20,18 +24,23 @@ namespace RvG {
 
 	class Window : public ParentWidget {
 	public:
-		Window(const wchar_t* className, const wchar_t* titleText);
+		Window(const wchar_t* titleText);
 		int keepResponding();
 	};
 
 	class Button : public ParentWidget {
 	public:
-		Button(const wchar_t* titleText, int x, int y, int wid, int hei, ParentWidget* parent);
+		Button(const wchar_t* titleText, int x, int y, int wid, int hei, ParentWidget* argParent);
 	};
 
 	class Edit : public ParentWidget {
 	public:
-		Edit(const wchar_t* titleText, int x, int y, int wid, int hei, ParentWidget* parent);
+		Edit(const wchar_t* titleText, int x, int y, int wid, int hei, ParentWidget* argParent);
+	};
+
+	class Container : public ParentWidget {
+	public:
+		Container(int x, int y, ParentWidget* argParent);
 	};
 
 	static HFONT _hFont;
