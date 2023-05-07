@@ -98,8 +98,16 @@ RvG::Window::Window(const wchar_t* titleText) {
 
 int RvG::Window::keepResponding() {
 	MSG msg = { };
-	while (GetMessage(&msg, this->hWnd, 0, 0) > 0)
-	{
+	while (GetMessage(&msg, this->hWnd, 0, 0) > 0) {
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+	return 0;
+}
+
+int RvG::Window::respond() {
+	MSG msg = { };
+	if (GetMessage(&msg, this->hWnd, 0, 0) > 0) {
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}

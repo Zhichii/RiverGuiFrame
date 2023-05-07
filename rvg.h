@@ -26,6 +26,7 @@ namespace RvG {
 	public:
 		Window(const wchar_t* titleText);
 		int keepResponding();
+		int respond();
 	};
 
 	class Button : public ParentWidget {
