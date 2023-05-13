@@ -21,8 +21,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 	case WM_PAINT: {
 		PAINTSTRUCT ps;
 		HDC hdc = BeginPaint(hwnd, &ps);
-
-		FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
+		FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW));
 		EndPaint(hwnd, &ps);
 		return 0;
 	}
@@ -83,6 +82,7 @@ RvG::Window::Window(const wchar_t* titleText) {
 	wc.lpfnWndProc = WindowProc;
 	wc.hInstance = RvG::_hInstance;
 	wc.lpszClassName = L"RvG W";
+	//wc.style = CS_VREDRAW | CS_HREDRAW;
 	RegisterClass(&wc);
 	this->hWnd = CreateWindowEx(0, L"RvG W", L"Win32 Window", WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, RvG::_hInstance, NULL);
