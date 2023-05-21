@@ -7,8 +7,13 @@
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	switch (uMsg) {
+	case WM_CLOSE: {
+		DefWindowProc(hwnd, uMsg, wParam, lParam);
+		ExitProcess(0);
+		return 0;
+	}
 	case WM_DESTROY: {
-		PostQuitMessage(0);
+		ExitProcess(0);
 		return 0;
 	}
 	case WM_COMMAND: {
@@ -106,16 +111,14 @@ RvG::Button::Button(const wchar_t* titleText, int lx, int ly, int wid, int hei, 
 	this->parent = argParent;
 	int x = lx;
 	int y = ly;
-	RECT fRect;
-	RECT cRect;
 	while (1) {
 		if (this->parent->parent == nullptr) break;
-		GetWindowRect(this->parent->parent->hWnd, &fRect);
-		GetWindowRect(this->parent->hWnd, &cRect);
-		x += cRect.left - fRect.left;
-		y += cRect.top - fRect.top;
+		x += this->parent->xPos + 1;
+		y += this->parent->yPos + 1;
 		this->parent = this->parent->parent;
 	}
+	this->xPos = x;
+	this->yPos = y;
 	this->widLen = wid;
 	this->heiLen = hei;
 	if (this->parent->children[255] != NULL) return;
@@ -143,20 +146,18 @@ RvG::Button::Button(const wchar_t* titleText, int lx, int ly, int wid, int hei, 
 	this->setTitleText(titleText);
 }
 
-RvG::Edit::Edit(const wchar_t* titleText, int lx, int ly, int wid, int hei, ParentWidget* argParent) {
+RvG::Edit::Edit(const wchar_t* titleText, int lx, int ly, int wid, int hei, bool multiline, ParentWidget* argParent) {
 	this->parent = argParent;
 	int x = lx;
 	int y = ly;
-	RECT fRect;
-	RECT cRect;
 	while (1) {
 		if (this->parent->parent == nullptr) break;
-		GetWindowRect(this->parent->parent->hWnd, &fRect);
-		GetWindowRect(this->parent->hWnd, &cRect);
-		x += cRect.left - fRect.left;
-		y += cRect.top - fRect.top;
+		x += this->parent->xPos + 1;
+		y += this->parent->yPos + 1;
 		this->parent = this->parent->parent;
 	}
+	this->xPos = x;
+	this->yPos = y;
 	this->widLen = wid;
 	this->heiLen = hei;
 	if (this->parent->children[255] != NULL) return;
@@ -172,7 +173,9 @@ RvG::Edit::Edit(const wchar_t* titleText, int lx, int ly, int wid, int hei, Pare
 			break;
 		}
 	}
-	this->hWnd = CreateWindowEx(0, L"Edit", L"Win32 Edit", WS_CHILD | WS_VISIBLE | WS_BORDER | ES_MULTILINE | ES_WANTRETURN,
+	long style = WS_CHILD | WS_VISIBLE | WS_BORDER | ES_WANTRETURN;
+	if (multiline) style |= ES_MULTILINE;
+	this->hWnd = CreateWindowEx(0, L"Edit", L"Win32 Edit", style,
 		x, y, wid, hei, this->parent->hWnd, (HMENU)id, RvG::_hInstance, NULL);
 	this->parent->children[id] = this;
 	//SendMessage(this->hWnd, WM_SETFONT, WPARAM(RvG::_hFont), TRUE);
@@ -185,22 +188,20 @@ RvG::Edit::Edit(const wchar_t* titleText, int lx, int ly, int wid, int hei, Pare
 	this->setTitleText(titleText);
 }
 
-RvG::Container::Container(int lx, int ly, ParentWidget* argParent) {
+RvG::Container::Container(int lx, int ly, int wid, int hei, ParentWidget* argParent) {
 	this->parent = argParent;
 	int x = lx;
 	int y = ly;
-	RECT fRect;
-	RECT cRect;
 	while (1) {
 		if (this->parent->parent == nullptr) break;
-		GetWindowRect(this->parent->parent->hWnd, &fRect);
-		GetWindowRect(this->parent->hWnd, &cRect);
-		x += cRect.left - fRect.left;
-		y += cRect.top - fRect.top;
+		x += this->parent->xPos + 1;
+		y += this->parent->yPos + 1;
 		this->parent = this->parent->parent;
 	}
-	this->widLen = 0;
-	this->heiLen = 0;
+	this->xPos = x;
+	this->yPos = y;
+	this->widLen = wid + 2;
+	this->heiLen = hei + 2;
 	if (this->parent->children[255] != NULL) return;
 	this->parent = parent;
 	int id;
@@ -215,13 +216,8 @@ RvG::Container::Container(int lx, int ly, ParentWidget* argParent) {
 			break;
 		}
 	}
-	WNDCLASS wc = { };
-	wc.lpfnWndProc = DefWindowProc;
-	wc.hInstance = RvG::_hInstance;
-	wc.lpszClassName = L"RvG C";
-	RegisterClass(&wc);
-	this->hWnd = CreateWindowEx(0, L"RvG C", L"RiverGuiFrame Container", WS_CHILD | WS_VISIBLE,
-		x, y, 0, 0, this->parent->hWnd, (HMENU)id, RvG::_hInstance, NULL);
+	this->hWnd = CreateWindowEx(0, L"Static", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER,
+		x, y, widLen, heiLen, this->parent->hWnd, (HMENU)id, RvG::_hInstance, NULL);
 	this->parent->children[id] = this;
 
 	if (this->hWnd == NULL) {
@@ -229,4 +225,102 @@ RvG::Container::Container(int lx, int ly, ParentWidget* argParent) {
 	}
 
 	this->show();
+}
+
+RvG::ListBox::ListBox(int lx, int ly, int wid, int hei, ParentWidget* argParent) {
+	this->parent = argParent;
+	int x = lx;
+	int y = ly;
+	while (1) {
+		if (this->parent->parent == nullptr) break;
+		x += this->parent->xPos + 1;
+		y += this->parent->yPos + 1;
+		this->parent = this->parent->parent;
+	}
+	this->xPos = x;
+	this->yPos = y;
+	this->widLen = wid;
+	this->heiLen = hei;
+	if (this->parent->children[255] != NULL) return;
+	int id;
+	for (id = 0; id < 256; id++) {
+		if (this->parent->children[id] == NULL) {
+			break;
+		}
+	}
+	for (int i = 0; i < 256; i++) {
+		if (argParent->children[i] == NULL) {
+			argParent->children[i] = this;
+			break;
+		}
+	}
+	this->hWnd = CreateWindowEx(0, L"ListBox", NULL, WS_VISIBLE | WS_CHILD | WS_BORDER | LBS_HASSTRINGS,
+		x, y, wid, hei, this->parent->hWnd, (HMENU)id, RvG::_hInstance, NULL);
+	this->parent->children[id] = this;
+	//SendMessage(this->hWnd, WM_SETFONT, WPARAM(RvG::_hFont), TRUE);
+
+	if (this->hWnd == NULL) {
+		return;
+	}
+
+	this->show();
+}
+
+int RvG::ListBox::add(const char* text) {
+	SendMessageA(this->hWnd, LB_ADDSTRING, 0, (LPARAM)text);
+	return 0;
+}
+
+int RvG::ListBox::getSelIndex() {
+	int t = SendMessage(this->hWnd, LB_GETCURSEL, 0, 0);
+	return t;
+}
+
+int RvG::ListBox::setSelIndex(int index) {
+	SendMessage(this->hWnd, LB_SETCURSEL, index, 0);
+	return 0;
+}
+
+int RvG::ListBox::getText(int index, char* output) {
+	SendMessageA(this->hWnd, LB_GETTEXT, index, (LPARAM)output);
+	return 0;
+}
+
+RvG::Label::Label(const wchar_t* text, int lx, int ly, int wid, int hei, ParentWidget* argParent) {
+	this->parent = argParent;
+	int x = lx;
+	int y = ly;
+	while (1) {
+		if (this->parent->parent == nullptr) break;
+		x += this->parent->xPos + 1;
+		y += this->parent->yPos + 1;
+		this->parent = this->parent->parent;
+	}
+	this->xPos = x;
+	this->yPos = y;
+	this->widLen = wid;
+	this->heiLen = hei;
+	if (this->parent->children[255] != NULL) return;
+	int id;
+	for (id = 0; id < 256; id++) {
+		if (this->parent->children[id] == NULL) {
+			break;
+		}
+	}
+	for (int i = 0; i < 256; i++) {
+		if (argParent->children[i] == NULL) {
+			argParent->children[i] = this;
+			break;
+		}
+	}
+	this->hWnd = CreateWindowEx(0, L"Static", L"Win32 Label", WS_CHILD | WS_VISIBLE,
+		x, y, wid, hei, this->parent->hWnd, (HMENU)id, RvG::_hInstance, NULL);
+	this->parent->children[id] = this;
+
+	if (this->hWnd == NULL) {
+		return;
+	}
+
+	this->show();
+	this->setTitleText(text);
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include <windows.h>
+#define RVG_START RvG::_hInstance = GetModuleHandle(NULL)
 
 typedef int func(HWND, HWND);
 
@@ -11,8 +12,10 @@ namespace RvG {
 		ParentWidget* children[256] = { };
 		ParentWidget* parent = nullptr;
 		func* bind = nullptr;
-		int widLen;
-		int heiLen;
+		int xPos = 0;
+		int yPos = 0;
+		int widLen = 0;
+		int heiLen = 0;
 		int setTitleText(const wchar_t* titleText);
 		int setGeometry(int x, int y, int wid, int hei);
 		int show();
@@ -29,22 +32,31 @@ namespace RvG {
 
 	class Button : public ParentWidget {
 	public:
-		Button(const wchar_t* titleText, int x, int y, int wid, int hei, ParentWidget* argParent);
+		Button(const wchar_t* titleText, int lx, int ly, int wid, int hei, ParentWidget* argParent);
 	};
 
 	class Edit : public ParentWidget {
 	public:
-		Edit(const wchar_t* titleText, int x, int y, int wid, int hei, ParentWidget* argParent);
+		Edit(const wchar_t* titleText, int lx, int ly, int wid, int hei, bool multiline, ParentWidget* argParent);
 	};
 
 	class Container : public ParentWidget {
 	public:
-		Container(int x, int y, ParentWidget* argParent);
+		Container(int lx, int ly, int wid, int hei, ParentWidget* argParent);
 	};
 
-	class TextList : public ParentWidget {
+	class ListBox : public ParentWidget {
 	public:
-		TextList(int x, int y, ParentWidget* argParent);
+		ListBox(int lx, int ly, int wid, int hei, ParentWidget* argParent);
+		int add(const char* text);
+		int getSelIndex();
+		int setSelIndex(int index);
+		int getText(int index, char* output);
+	};
+
+	class Label : public ParentWidget {
+	public:
+		Label(const wchar_t* text, int lx, int ly, int wid, int hei, ParentWidget* argParent);
 	};
 
 	static HINSTANCE _hInstance;
