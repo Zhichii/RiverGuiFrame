@@ -11,8 +11,6 @@ namespace RvG {
 		ParentWidget* children[256] = { };
 		ParentWidget* parent = nullptr;
 		func* bind = nullptr;
-		int xPos;
-		int yPos;
 		int widLen;
 		int heiLen;
 		int setTitleText(const wchar_t* titleText);
@@ -44,9 +42,11 @@ namespace RvG {
 		Container(int x, int y, ParentWidget* argParent);
 	};
 
-	static HFONT _hFont;
+	class TextList : public ParentWidget {
+	public:
+		TextList(int x, int y, ParentWidget* argParent);
+	};
+
 	static HINSTANCE _hInstance;
-	int start();
-	int end();
 
 }

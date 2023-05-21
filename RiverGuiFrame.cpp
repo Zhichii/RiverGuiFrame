@@ -15,7 +15,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 		if (wParam > 255) break;
 		RvG::ParentWidget* pw = (RvG::ParentWidget*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 		if (pw->children[LOWORD(wParam)] != NULL)
-			pw->children[LOWORD(wParam)]->bind(hwnd, (HWND)lParam);
+			if (pw->children[LOWORD(wParam)]->bind != NULL)
+				pw->children[LOWORD(wParam)]->bind(hwnd, (HWND)lParam);
 		return 0;
 	}
 	case WM_PAINT: {
@@ -27,17 +28,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 	}
 	}
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
-}
-
-int RvG::start() {
-	_hInstance = GetModuleHandle(NULL);
-	_hFont = CreateFont(42, 8, 0, 0, 400, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_CHARACTER_PRECIS, CLIP_CHARACTER_PRECIS, DEFAULT_QUALITY, FF_DONTCARE, L"MS Shell Dlg");
-	return 0;
-}
-
-int RvG::end() {
-	DeleteObject(RvG::_hFont);
-	return 0;
 }
 
 int RvG::ParentWidget::show() {
@@ -65,8 +55,6 @@ int RvG::ParentWidget::setTitleText(const wchar_t* titleText) {
 
 int RvG::ParentWidget::setGeometry(int x, int y, int wid, int hei) {
 	MoveWindow(this->hWnd, x, y, wid, hei, TRUE);
-	this->xPos = x;
-	this->yPos = y;
 	this->widLen = wid;
 	this->heiLen = hei;
 	return 0;
@@ -118,14 +106,16 @@ RvG::Button::Button(const wchar_t* titleText, int lx, int ly, int wid, int hei, 
 	this->parent = argParent;
 	int x = lx;
 	int y = ly;
+	RECT fRect;
+	RECT cRect;
 	while (1) {
 		if (this->parent->parent == nullptr) break;
-		x += this->parent->xPos;
-		y += this->parent->yPos;
+		GetWindowRect(this->parent->parent->hWnd, &fRect);
+		GetWindowRect(this->parent->hWnd, &cRect);
+		x += cRect.left - fRect.left;
+		y += cRect.top - fRect.top;
 		this->parent = this->parent->parent;
 	}
-	this->xPos = x;
-	this->yPos = y;
 	this->widLen = wid;
 	this->heiLen = hei;
 	if (this->parent->children[255] != NULL) return;
@@ -157,14 +147,16 @@ RvG::Edit::Edit(const wchar_t* titleText, int lx, int ly, int wid, int hei, Pare
 	this->parent = argParent;
 	int x = lx;
 	int y = ly;
+	RECT fRect;
+	RECT cRect;
 	while (1) {
 		if (this->parent->parent == nullptr) break;
-		x += this->parent->xPos;
-		y += this->parent->yPos;
+		GetWindowRect(this->parent->parent->hWnd, &fRect);
+		GetWindowRect(this->parent->hWnd, &cRect);
+		x += cRect.left - fRect.left;
+		y += cRect.top - fRect.top;
 		this->parent = this->parent->parent;
 	}
-	this->xPos = x;
-	this->yPos = y;
 	this->widLen = wid;
 	this->heiLen = hei;
 	if (this->parent->children[255] != NULL) return;
@@ -197,14 +189,16 @@ RvG::Container::Container(int lx, int ly, ParentWidget* argParent) {
 	this->parent = argParent;
 	int x = lx;
 	int y = ly;
+	RECT fRect;
+	RECT cRect;
 	while (1) {
 		if (this->parent->parent == nullptr) break;
-		x += this->parent->xPos;
-		y += this->parent->yPos;
+		GetWindowRect(this->parent->parent->hWnd, &fRect);
+		GetWindowRect(this->parent->hWnd, &cRect);
+		x += cRect.left - fRect.left;
+		y += cRect.top - fRect.top;
 		this->parent = this->parent->parent;
 	}
-	this->xPos = x;
-	this->yPos = y;
 	this->widLen = 0;
 	this->heiLen = 0;
 	if (this->parent->children[255] != NULL) return;
