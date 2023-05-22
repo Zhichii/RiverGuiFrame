@@ -6,19 +6,23 @@
 #include "rvg.h"
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	RvG::Window* pw = (RvG::Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 	switch (uMsg) {
 	case WM_CLOSE: {
 		DefWindowProc(hwnd, uMsg, wParam, lParam);
-		ExitProcess(0);
+		if (pw->type == 0) {
+			ExitProcess(0);
+		}
 		return 0;
 	}
 	case WM_DESTROY: {
-		ExitProcess(0);
+		if (pw->type == 0) {
+			ExitProcess(0);
+		}
 		return 0;
 	}
 	case WM_COMMAND: {
 		if (wParam > 255) break;
-		RvG::ParentWidget* pw = (RvG::ParentWidget*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 		if (pw->children[LOWORD(wParam)] != NULL)
 			if (pw->children[LOWORD(wParam)]->bind != NULL)
 				pw->children[LOWORD(wParam)]->bind(hwnd, (HWND)lParam);
@@ -53,8 +57,8 @@ int RvG::ParentWidget::hide() {
 	return 0;
 }
 
-int RvG::ParentWidget::setTitleText(const wchar_t* titleText) {
-	SetWindowText(this->hWnd, titleText);
+int RvG::ParentWidget::setText(const wchar_t* text) {
+	SetWindowText(this->hWnd, text);
 	return 0;
 }
 
@@ -70,7 +74,13 @@ int RvG::ParentWidget::bindCommand(func bind) {
 	return 0;
 }
 
-RvG::Window::Window(const wchar_t* titleText) {
+int RvG::ParentWidget::getText(wchar_t* output, int size) {
+	GetWindowText(this->hWnd, output, size);
+	return 0;
+}
+
+RvG::Window::Window(const wchar_t* titleText, int type, int lx, int ly, int wid, int hei, long long otherStyle) {
+	this->type = type;
 	WNDCLASS wc = { };
 	wc.lpfnWndProc = WindowProc;
 	wc.hInstance = RvG::_hInstance;
@@ -78,14 +88,14 @@ RvG::Window::Window(const wchar_t* titleText) {
 	//wc.style = CS_VREDRAW | CS_HREDRAW;
 	RegisterClass(&wc);
 	this->hWnd = CreateWindowEx(0, L"RvG W", L"Win32 Window", WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, RvG::_hInstance, NULL);
+		lx, ly, wid, hei, NULL, NULL, RvG::_hInstance, NULL);
 	
 	if (this->hWnd == NULL) {
 		return;
 	}
 
 	this->show();
-	this->setTitleText(titleText);
+	this->setText(titleText);
 	SetWindowLongPtr(this->hWnd, GWLP_USERDATA, (LONG_PTR)this);
 }
 
@@ -107,7 +117,7 @@ int RvG::Window::respond() {
 	return 0;
 }
 
-RvG::Button::Button(const wchar_t* titleText, int lx, int ly, int wid, int hei, ParentWidget* argParent) {
+RvG::Button::Button(const wchar_t* titleText, int lx, int ly, int wid, int hei, ParentWidget* argParent, long long otherStyle) {
 	this->parent = argParent;
 	int x = lx;
 	int y = ly;
@@ -134,7 +144,7 @@ RvG::Button::Button(const wchar_t* titleText, int lx, int ly, int wid, int hei, 
 			break;
 		}
 	}
-	this->hWnd = CreateWindowEx(0, L"Button", L"Win32 Button", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+	this->hWnd = CreateWindowEx(0, L"Button", L"Win32 Button", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | otherStyle,
 		x, y, wid, hei, this->parent->hWnd, (HMENU)id, RvG::_hInstance, NULL);
 	this->parent->children[id] = this;
 
@@ -143,10 +153,10 @@ RvG::Button::Button(const wchar_t* titleText, int lx, int ly, int wid, int hei, 
 	}
 
 	this->show();
-	this->setTitleText(titleText);
+	this->setText(titleText);
 }
 
-RvG::Edit::Edit(const wchar_t* titleText, int lx, int ly, int wid, int hei, bool multiline, ParentWidget* argParent) {
+RvG::InputBox::InputBox(const wchar_t* titleText, int lx, int ly, int wid, int hei, ParentWidget* argParent, long long otherStyle) {
 	this->parent = argParent;
 	int x = lx;
 	int y = ly;
@@ -173,9 +183,7 @@ RvG::Edit::Edit(const wchar_t* titleText, int lx, int ly, int wid, int hei, bool
 			break;
 		}
 	}
-	long style = WS_CHILD | WS_VISIBLE | WS_BORDER | ES_WANTRETURN;
-	if (multiline) style |= ES_MULTILINE;
-	this->hWnd = CreateWindowEx(0, L"Edit", L"Win32 Edit", style,
+	this->hWnd = CreateWindowEx(0, L"Edit", L"Win32 InputBox", WS_CHILD | WS_VISIBLE | WS_BORDER | ES_WANTRETURN | otherStyle,
 		x, y, wid, hei, this->parent->hWnd, (HMENU)id, RvG::_hInstance, NULL);
 	this->parent->children[id] = this;
 	//SendMessage(this->hWnd, WM_SETFONT, WPARAM(RvG::_hFont), TRUE);
@@ -185,10 +193,10 @@ RvG::Edit::Edit(const wchar_t* titleText, int lx, int ly, int wid, int hei, bool
 	}
 
 	this->show();
-	this->setTitleText(titleText);
+	this->setText(titleText);
 }
 
-RvG::Container::Container(int lx, int ly, int wid, int hei, ParentWidget* argParent) {
+RvG::Container::Container(int lx, int ly, int wid, int hei, ParentWidget* argParent, long long otherStyle) {
 	this->parent = argParent;
 	int x = lx;
 	int y = ly;
@@ -216,7 +224,7 @@ RvG::Container::Container(int lx, int ly, int wid, int hei, ParentWidget* argPar
 			break;
 		}
 	}
-	this->hWnd = CreateWindowEx(0, L"Static", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER,
+	this->hWnd = CreateWindowEx(0, L"Static", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | otherStyle,
 		x, y, widLen, heiLen, this->parent->hWnd, (HMENU)id, RvG::_hInstance, NULL);
 	this->parent->children[id] = this;
 
@@ -227,7 +235,7 @@ RvG::Container::Container(int lx, int ly, int wid, int hei, ParentWidget* argPar
 	this->show();
 }
 
-RvG::ListBox::ListBox(int lx, int ly, int wid, int hei, ParentWidget* argParent) {
+RvG::ListBox::ListBox(int lx, int ly, int wid, int hei, ParentWidget* argParent, long long otherStyle) {
 	this->parent = argParent;
 	int x = lx;
 	int y = ly;
@@ -254,7 +262,7 @@ RvG::ListBox::ListBox(int lx, int ly, int wid, int hei, ParentWidget* argParent)
 			break;
 		}
 	}
-	this->hWnd = CreateWindowEx(0, L"ListBox", NULL, WS_VISIBLE | WS_CHILD | WS_BORDER | LBS_HASSTRINGS,
+	this->hWnd = CreateWindowEx(0, L"ListBox", L"Win32 ListBox", WS_VISIBLE | WS_CHILD | WS_BORDER | LBS_HASSTRINGS | otherStyle,
 		x, y, wid, hei, this->parent->hWnd, (HMENU)id, RvG::_hInstance, NULL);
 	this->parent->children[id] = this;
 	//SendMessage(this->hWnd, WM_SETFONT, WPARAM(RvG::_hFont), TRUE);
@@ -266,8 +274,8 @@ RvG::ListBox::ListBox(int lx, int ly, int wid, int hei, ParentWidget* argParent)
 	this->show();
 }
 
-int RvG::ListBox::add(const char* text) {
-	SendMessageA(this->hWnd, LB_ADDSTRING, 0, (LPARAM)text);
+int RvG::ListBox::add(const wchar_t* text) {
+	SendMessage(this->hWnd, LB_ADDSTRING, 0, (LPARAM)text);
 	return 0;
 }
 
@@ -286,7 +294,7 @@ int RvG::ListBox::getText(int index, char* output) {
 	return 0;
 }
 
-RvG::Label::Label(const wchar_t* text, int lx, int ly, int wid, int hei, ParentWidget* argParent) {
+RvG::Label::Label(const wchar_t* text, int lx, int ly, int wid, int hei, ParentWidget* argParent, long long otherStyle) {
 	this->parent = argParent;
 	int x = lx;
 	int y = ly;
@@ -313,7 +321,7 @@ RvG::Label::Label(const wchar_t* text, int lx, int ly, int wid, int hei, ParentW
 			break;
 		}
 	}
-	this->hWnd = CreateWindowEx(0, L"Static", L"Win32 Label", WS_CHILD | WS_VISIBLE,
+	this->hWnd = CreateWindowEx(0, L"Static", L"Win32 Label", WS_CHILD | WS_VISIBLE | otherStyle,
 		x, y, wid, hei, this->parent->hWnd, (HMENU)id, RvG::_hInstance, NULL);
 	this->parent->children[id] = this;
 
@@ -322,5 +330,5 @@ RvG::Label::Label(const wchar_t* text, int lx, int ly, int wid, int hei, ParentW
 	}
 
 	this->show();
-	this->setTitleText(text);
+	this->setText(text);
 }
