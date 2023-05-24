@@ -33,4 +33,7 @@
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="man.manifest" />
+  </ItemGroup>
 </Project>
