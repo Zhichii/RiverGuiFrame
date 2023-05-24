@@ -5,17 +5,18 @@
 #include "framework.h"
 #include "rvg.h"
 
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK RvG::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	RvG::Window* pw = (RvG::Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 	switch (uMsg) {
 	case WM_CLOSE: {
-		DefWindowProc(hwnd, uMsg, wParam, lParam);
+		DestroyWindow(hwnd);
 		if (pw->type == 0) {
 			ExitProcess(0);
 		}
 		return 0;
 	}
 	case WM_DESTROY: {
+		DestroyWindow(hwnd);
 		if (pw->type == 0) {
 			ExitProcess(0);
 		}
@@ -56,7 +57,6 @@ int RvG::ParentWidget::hide() {
 	}
 	return 0;
 }
-
 int RvG::ParentWidget::setText(const wchar_t* text) {
 	SetWindowText(this->hWnd, text);
 	return 0;
@@ -81,12 +81,6 @@ int RvG::ParentWidget::getText(wchar_t* output, int size) {
 
 RvG::Window::Window(const wchar_t* titleText, int type, int lx, int ly, int wid, int hei, long long otherStyle) {
 	this->type = type;
-	WNDCLASS wc = { };
-	wc.lpfnWndProc = WindowProc;
-	wc.hInstance = RvG::_hInstance;
-	wc.lpszClassName = L"RvG W";
-	//wc.style = CS_VREDRAW | CS_HREDRAW;
-	RegisterClass(&wc);
 	this->hWnd = CreateWindowEx(0, L"RvG W", L"Win32 Window", WS_OVERLAPPEDWINDOW,
 		lx, ly, wid, hei, NULL, NULL, RvG::_hInstance, NULL);
 	
@@ -101,7 +95,7 @@ RvG::Window::Window(const wchar_t* titleText, int type, int lx, int ly, int wid,
 
 int RvG::Window::keepResponding() {
 	MSG msg = { };
-	while (GetMessage(&msg, this->hWnd, 0, 0) > 0) {
+	while (GetMessage(&msg, this->hWnd, 0, 0) > 0 && IsWindow(this->hWnd)) {
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
@@ -113,6 +107,9 @@ int RvG::Window::respond() {
 	if (GetMessage(&msg, this->hWnd, 0, 0) > 0) {
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
+	}
+	else {
+		return 1;
 	}
 	return 0;
 }

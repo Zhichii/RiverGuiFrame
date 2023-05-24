@@ -1,12 +1,14 @@
 #pragma once
 #include <windows.h>
-#define RVG_START RvG::_hInstance = GetModuleHandle(NULL)
+#define RVG_START WNDCLASS wc = { }; wc.lpfnWndProc = RvG::WindowProc; wc.hInstance = RvG::_hInstance; wc.lpszClassName = L"RvG W";RegisterClass(&wc); RvG::_hInstance = GetModuleHandle(NULL)
 #define RVGW_MAINWINDOW 0
 #define RVGW_DIALOG 1
 
 typedef int func(HWND, HWND);
 
 namespace RvG {
+
+	LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	class ParentWidget {
 	public:
