@@ -57,6 +57,10 @@ int RvG::ParentWidget::hide() {
 	}
 	return 0;
 }
+RvG::ParentWidget::operator HWND() {
+	return this->hWnd;
+}
+
 int RvG::ParentWidget::setText(const wchar_t* text) {
 	SetWindowText(this->hWnd, text);
 	return 0;

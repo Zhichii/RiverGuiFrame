@@ -13,6 +13,7 @@ namespace RvG {
 	class ParentWidget {
 	public:
 		HWND hWnd = 0;
+		operator HWND();
 		ParentWidget* children[256] = { };
 		ParentWidget* parent = nullptr;
 		func* bind = nullptr;
